@@ -95,6 +95,7 @@ export const experience: CompanyExperience[] = [
           'Executed zero-downtime Kubernetes cluster upgrades and resolved long-standing ACM certificate and legacy load balancer issues.',
           'Migrated from Kubernetes Ingress to the Gateway API, decommissioning Ingress NGINX in favor of kgateway.',
           'Reviewed complex technical proposals and PRs org-wide to prevent architectural bottlenecks.',
+          'Designed a hub-and-spoke access model with an identity-aware proxy, unifying safe, auditable engineering access across all acquired organizations.',
         ],
       },
     ],
@@ -162,6 +163,7 @@ export const experience: CompanyExperience[] = [
         period: 'Aug 2019 – Dec 2020',
         bullets: [
           'Led a cross-functional team delivering high-consequence UK Energy Smart Metering platforms, guiding architecture and technology decisions using Agile/Kanban.',
+          'Mentored engineers, reviewed technical proposals, and coordinated with testing and client DevOps teams to keep delivery aligned with product quality standards.',
           'Engineered highly available multi-cloud environments across AWS and Azure with CloudFormation, meeting ISO 27001 and UK government utility compliance standards.',
         ],
       },
