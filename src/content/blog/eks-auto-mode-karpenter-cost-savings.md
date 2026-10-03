@@ -1,14 +1,13 @@
 ---
 title: "How we cut $50k/year off our AWS bill with EKS Auto Mode and Karpenter"
-description: "Moving from fixed-size node groups to EKS Auto Mode (Karpenter under the hood), and the gotchas we hit along the way."
+description: "Four EKS clusters on fixed node groups and Classic Load Balancers, and how we moved them to EKS Auto Mode with zero service disruption."
 pubDate: 2025-09-15
 tags: ["kubernetes", "aws", "finops", "karpenter"]
 ---
-
 Our VPCs had originally been created by hand in the AWS console, and our EKS clusters ran on managed node groups
-with a fixed number of instances. Over the course of this project, I moved the entire network into Terraform,
-created private subnets and migrated all of our infrastructure into them, and finally moved the clusters to
-dynamic node scaling. The result was about **$50k/year** in AWS compute savings, with zero service disruption.
+with a fixed number of instances. I moved the network into Terraform, migrated our infrastructure into private
+subnets, and then moved the clusters to dynamic node scaling with EKS Auto Mode. The result was about
+**$50k/year** in AWS compute savings, with zero service disruption.
 
 <div class="stats">
   <div><strong>$50k/yr</strong><span>AWS compute saved</span></div>
@@ -26,20 +25,25 @@ pods had to scale. This had a few consequences:
 
 - The cluster sat idle most of the time, in every environment, and production was the worst case.
 - We paid for that extra 30% around the clock, and with four clusters the cloud costs were huge.
-- Choosing the right instance type for a mixed workload was always guesswork.
 
 ## Starting with an investigation
 
 Before committing to anything, we ran an investigation to find out whether migrating to EKS Auto Mode was even
-possible for us.
+possible for us. EKS Auto Mode runs [Karpenter](https://karpenter.sh/) for you, so nodes are created only when
+pods need them.
 
 The main blocker was our load balancers. We were using Classic Load Balancers, which operate at layer 4, and EKS
 Auto Mode works with Application Load Balancers, which operate at layer 7. That is not a like-for-like swap, so
-the real question was how to get from one to the other without breaking anything.
+the real question was how to get from one to the other.
 
-To answer it, we built a proof of concept: a separate EKS cluster, set up with an ALB and a handful of
-application workloads, to act as a migration cluster. Running real workloads behind the new load balancer showed
-us what the migration would involve before we touched anything in production.
+At first we tried to keep the Classic Load Balancers. Auto Mode was new at the time, and when we talked to AWS
+support, they told us it was possible. It was not. We had to find that out ourselves, and the only way forward was
+to migrate to ALBs.
+
+To work out how, we built a proof of concept: a separate EKS cluster, set up with an ALB and a set of application
+workloads, to act as a migration cluster. We ran end-to-end tests against it to make sure everything worked behind
+the ALB. The result was clear. Migrating everything to ALBs was perfectly feasible, with no loss for our company
+workloads, and the proof of concept gave us every step we needed to do it.
 
 ## Getting ALBs from Auto Mode
 
@@ -47,11 +51,16 @@ EKS Auto Mode runs the AWS load balancer controller for you. To make it provisio
 an `IngressClass` and `IngressClassParams` to the cluster. After that, every `Ingress` that uses this class gets
 its own ALB in AWS, with no manual setup.
 
-## What changed
+## Provisioning with Terraform
 
-Once the investigation showed the migration was feasible, we moved to EKS Auto Mode, which runs
-[Karpenter](https://karpenter.sh/) for you. Nodes are created only when pods need them, so the cluster scales
-easily and we now run nodes that match what our systems actually require. A few notes from the migration:
+We wrote a new Terraform module that provisions EKS Auto Mode. Instead of deploying into public subnets, the module
+looks up the private subnets of each environment's VPC and uses those. Every cluster now runs in private subnets by
+default.
+
+## Node pools and scaling
+
+Once the investigation showed the migration was feasible, we moved the workloads to dynamic scaling. A few notes
+from the migration:
 
 - **Split workloads with your own `NodePool` and `NodeClass`.** We separated workloads by type and used a
   `nodeSelector` to place each one on the right instances. Data workloads need more memory, so they run on
@@ -64,7 +73,7 @@ easily and we now run nodes that match what our systems actually require. A few 
 - **Use Spot for workloads that are not critical.** We created Spot nodes for these workloads and assigned their
   pods to them. Critical workloads stay on On-Demand.
 - **Set disruption budgets on your `NodePool`.** We configured them so that nodes only rotate outside of spike
-  hours, during the US night. Consolidation and node rotation never compete with peak traffic.
+  hours, during the US night. This keeps node rotation away from peak traffic.
 - **Check your pod disruption budgets.** Consolidation will happily evict pods to pack things more efficiently,
   so make sure your PDBs reflect what you can really tolerate.
 
@@ -78,20 +87,16 @@ temporarily, without touching live traffic. Once we were happy with the results,
 
 ![Blue/green migration from the old EKS clusters to new EKS Auto Mode clusters](./images/blue-green.svg)
 
-The move brought two more benefits. We finally retired the Classic Load Balancers in favour of ALBs. And with
-ALBs in place, we could set up AWS WAF to restrict access to our systems, reduce bot traffic and block
-high-risk countries.
-
 ## The outcome
 
 Because we had four clusters, one per environment, the cost of idle capacity added up fast. Moving all of them to
-Auto Mode saved about $50k/year in AWS compute, and there was no service disruption during the migration. Beyond the
-savings, the platform is better in a few ways:
+Auto Mode saved about $50k/year in AWS compute, and there was no service disruption during the migration. The
+platform also improved in other ways:
 
 - **Efficiency.** Our systems scale whenever they need to, and nodes match the workloads running on them.
-- **Security.** We added AWS WAF, which reduces bot traffic and blocks high-risk countries.
-- **Better load balancing.** ALBs work at layer 7, so they can route by host and path, check health at the HTTP
-  level, and integrate directly with WAF.
+- **Load balancing.** We finally retired the Classic Load Balancers and moved to ALBs.
+- **Security.** With ALBs in place, we added AWS WAF to restrict access to our systems, reduce bot traffic and
+  block high-risk countries.
 
-The main lesson for me is that the savings from autoscaling come from being able to *scale down* quickly and safely, not
-only from scaling up.
+The main lesson: do not take it for granted that something will work, even when the vendor says it will. We only
+learned that keeping Classic Load Balancers was not possible by building a proof of concept and testing it.
