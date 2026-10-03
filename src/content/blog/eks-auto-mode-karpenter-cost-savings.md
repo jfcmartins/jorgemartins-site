@@ -4,10 +4,11 @@ description: "Four EKS clusters on fixed node groups and Classic Load Balancers,
 pubDate: 2025-09-15
 tags: ["kubernetes", "aws", "finops", "karpenter"]
 ---
-Our VPCs had originally been created by hand in the AWS console, and our EKS clusters ran on managed node groups
-with a fixed number of instances. I moved the network into Terraform, migrated our infrastructure into private
-subnets, and then moved the clusters to dynamic node scaling with EKS Auto Mode. The result was about
-**$50k/year** in AWS compute savings, with zero service disruption.
+
+Before I joined the company, our EKS clusters did not scale at all. They ran on managed node groups with no cluster
+scaling, and each group had the same desired, minimum and maximum instance count. I moved the clusters to dynamic
+node scaling with EKS Auto Mode. The result was about **$50k/year** in AWS compute savings, with zero service
+disruption.
 
 <div class="stats">
   <div><strong>$50k/yr</strong><span>AWS compute saved</span></div>
@@ -19,9 +20,10 @@ subnets, and then moved the clusters to dynamic node scaling with EKS Auto Mode.
 
 ## The problem with fixed node groups
 
-We ran four EKS clusters, one for each environment, and all of them used managed node groups with a fixed instance
-count. We sized them roughly 30% above what the cluster actually needed, so that there would always be room when
-pods had to scale. This had a few consequences:
+We ran four EKS clusters, one for each environment. All of them used managed node groups with a fixed instance
+count: the desired, minimum and maximum were all the same, and nothing scaled the cluster up or down. We sized them
+roughly 30% above what the cluster actually needed, so that there would always be room when pods had to scale. This
+had a few consequences:
 
 - The cluster sat idle most of the time, in every environment, and production was the worst case.
 - We paid for that extra 30% around the clock, and with four clusters the cloud costs were huge.
@@ -56,9 +58,8 @@ its own ALB in AWS, with no manual setup.
 
 ### Provisioning with Terraform
 
-We wrote a new Terraform module that provisions EKS Auto Mode. Instead of deploying into public subnets, the module
-looks up the private subnets of each environment's VPC and uses those. Every cluster now runs in private subnets by
-default.
+We wrote a new Terraform module that provisions EKS Auto Mode, so every environment gets its cluster from the
+same code.
 
 ### Node pools and scaling
 
