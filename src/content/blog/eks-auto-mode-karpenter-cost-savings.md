@@ -5,11 +5,18 @@ pubDate: 2026-10-03
 tags: ["kubernetes", "aws", "finops", "karpenter"]
 ---
 
-I'm a Staff SRE at Fabric Health. We're a healthcare company and we acquire startups, so we end up with a lot of
-infrastructure. When I looked at ours, the VPCs had been created by hand in the AWS console, and the EKS clusters
-ran on managed node groups with a fixed number of instances. I moved the whole network into Terraform, created
-private subnets and moved all the infrastructure into them, and then moved the clusters to dynamic node scaling.
-That saved about **$50k/year** in AWS compute, and we had zero service disruption.
+Our VPCs had been created by hand in the AWS console, and our EKS clusters ran on managed node groups with a
+fixed number of instances. I moved the whole network into Terraform, created private subnets and moved all the
+infrastructure into them, and then moved the clusters to dynamic node scaling. That saved about **$50k/year** in
+AWS compute, and we had zero service disruption.
+
+<div class="stats">
+  <div><strong>$50k/yr</strong><span>AWS compute saved</span></div>
+  <div><strong>~30%</strong><span>idle extra capacity before</span></div>
+  <div><strong>0</strong><span>service disruption</span></div>
+</div>
+
+![Before and after: a fixed node group with idle extra capacity, and nodes sized to the pods](./images/node-capacity.svg)
 
 ## The problem with fixed node groups
 
@@ -38,6 +45,8 @@ from the migration:
 We didn't touch the old clusters. We built new EKS clusters next to them and moved over with a blue/green
 approach. That also let us start on the latest Kubernetes version available at the time.
 
+![Blue/green migration from the old EKS clusters to new EKS Auto Mode clusters](./images/blue-green.svg)
+
 We got two other things out of it. We finally retired the Classic Load Balancers and moved to ALBs. With ALBs in
 place we could set up AWS WAF, which lets us restrict access to our systems, cut bot traffic and block
 high-risk countries.
@@ -46,6 +55,3 @@ high-risk countries.
 
 About $50k/year saved in AWS compute, and no service disruption during the migration. The main thing I took from
 this: the savings come from being able to *scale down* fast and safely, not only scale up.
-
-I also wrote about another big change from the same period:
-[moving from Ingress NGINX to the Gateway API](../ingress-to-gateway-api/).

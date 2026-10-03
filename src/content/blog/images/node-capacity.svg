@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 300" role="img" aria-label="Before: fixed node group with about 30% spare capacity. After: nodes sized to the pods that need them.">
+  <rect width="720" height="300" rx="12" fill="#0f172a"/>
+  <g font-family="ui-sans-serif, system-ui, sans-serif" fill="#e2e8f0">
+    <text x="30" y="40" font-size="16" font-weight="600">Before: fixed managed node group</text>
+    <text x="30" y="160" font-size="16" font-weight="600">After: EKS Auto Mode (Karpenter)</text>
+    <text x="30" y="285" font-size="12" fill="#94a3b8">Illustrative. The spare capacity before was about 30% above what the cluster needed.</text>
+  </g>
+  <!-- before: needed + spare -->
+  <rect x="30" y="58" width="460" height="46" rx="6" fill="#2563eb"/>
+  <rect x="490" y="58" width="200" height="46" rx="6" fill="none" stroke="#f59e0b" stroke-width="2" stroke-dasharray="6 4"/>
+  <g font-family="ui-sans-serif, system-ui, sans-serif" font-size="13" fill="#fff" text-anchor="middle">
+    <text x="260" y="86">Capacity the pods need</text>
+    <text x="590" y="86" fill="#fbbf24">Idle extra, paid for 24/7</text>
+  </g>
+  <!-- after: matches need -->
+  <rect x="30" y="178" width="460" height="46" rx="6" fill="#2563eb"/>
+  <rect x="490" y="178" width="200" height="46" rx="6" fill="none" stroke="#475569" stroke-width="2" stroke-dasharray="2 5"/>
+  <g font-family="ui-sans-serif, system-ui, sans-serif" font-size="13" text-anchor="middle">
+    <text x="260" y="206" fill="#fff">Nodes sized to the pods</text>
+    <text x="590" y="206" fill="#94a3b8">Scaled down</text>
+  </g>
+</svg>

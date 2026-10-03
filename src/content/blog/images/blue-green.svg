@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 260" role="img" aria-label="Blue/green migration: traffic moves from the old EKS clusters behind Classic Load Balancers to new EKS Auto Mode clusters behind ALBs with WAF.">
+  <rect width="720" height="260" rx="12" fill="#0f172a"/>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#22c58b"/></marker>
+  </defs>
+  <g font-family="ui-sans-serif, system-ui, sans-serif" text-anchor="middle">
+    <text x="360" y="32" font-size="16" font-weight="600" fill="#e2e8f0">Blue/green: build new next to old, then move traffic</text>
+    <rect x="30" y="60" width="270" height="130" rx="10" fill="#1e293b" stroke="#475569" stroke-width="2"/>
+    <text x="165" y="90" font-size="15" font-weight="600" fill="#94a3b8">Old (blue)</text>
+    <text x="165" y="122" font-size="13" fill="#cbd5e1">Existing EKS clusters</text>
+    <text x="165" y="146" font-size="13" fill="#cbd5e1">Fixed node groups</text>
+    <text x="165" y="170" font-size="13" fill="#cbd5e1">Classic Load Balancers</text>
+    <rect x="420" y="60" width="270" height="130" rx="10" fill="#0b2a22" stroke="#22c58b" stroke-width="2"/>
+    <text x="555" y="90" font-size="15" font-weight="600" fill="#3fe3a6">New (green)</text>
+    <text x="555" y="122" font-size="13" fill="#d1fae5">New EKS clusters, latest Kubernetes</text>
+    <text x="555" y="146" font-size="13" fill="#d1fae5">EKS Auto Mode + Karpenter</text>
+    <text x="555" y="170" font-size="13" fill="#d1fae5">ALBs + AWS WAF</text>
+    <line x1="305" y1="125" x2="413" y2="125" stroke="#22c58b" stroke-width="3" marker-end="url(#a)"/>
+    <text x="360" y="112" font-size="12" fill="#3fe3a6">traffic</text>
+    <text x="360" y="232" font-size="13" fill="#94a3b8">Old clusters kept running until the move was done. Zero service disruption.</text>
+  </g>
+</svg>
