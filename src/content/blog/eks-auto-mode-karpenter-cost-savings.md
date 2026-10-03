@@ -1,7 +1,7 @@
 ---
 title: "How we cut $50k/year off our AWS bill with EKS Auto Mode and Karpenter"
 description: "Moving from fixed-size node groups to EKS Auto Mode (Karpenter under the hood), and the gotchas we hit along the way."
-pubDate: 2026-10-03
+pubDate: 2025-09-15
 tags: ["kubernetes", "aws", "finops", "karpenter"]
 ---
 
