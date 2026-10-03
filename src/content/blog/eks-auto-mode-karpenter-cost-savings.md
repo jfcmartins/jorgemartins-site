@@ -29,8 +29,8 @@ pods had to scale. This had a few consequences:
 ## Starting with an investigation
 
 Before committing to anything, we ran an investigation to find out whether migrating to EKS Auto Mode was even
-possible for us. EKS Auto Mode runs [Karpenter](https://karpenter.sh/) for you, so nodes are created only when
-pods need them.
+possible for us. [EKS Auto Mode](https://docs.aws.amazon.com/eks/latest/userguide/automode.html) runs
+[Karpenter](https://karpenter.sh/) for you, so nodes are created only when pods need them.
 
 The main blocker was our load balancers. We were using Classic Load Balancers, which operate at layer 4, and EKS
 Auto Mode works with Application Load Balancers, which operate at layer 7. That is not a like-for-like swap, so
@@ -45,19 +45,22 @@ workloads, to act as a migration cluster. We ran end-to-end tests against it to 
 the ALB. The result was clear. Migrating everything to ALBs was perfectly feasible, with no loss for our company
 workloads, and the proof of concept gave us every step we needed to do it.
 
-## Getting ALBs from Auto Mode
+## Building the new clusters
+
+### ALBs from Auto Mode
 
 EKS Auto Mode runs the AWS load balancer controller for you. To make it provision our ALBs automatically, we added
-an `IngressClass` and `IngressClassParams` to the cluster. After that, every `Ingress` that uses this class gets
+an `IngressClass` and `IngressClassParams` to the cluster
+([docs](https://docs.aws.amazon.com/eks/latest/userguide/auto-configure-alb.html)). After that, every `Ingress` that uses this class gets
 its own ALB in AWS, with no manual setup.
 
-## Provisioning with Terraform
+### Provisioning with Terraform
 
 We wrote a new Terraform module that provisions EKS Auto Mode. Instead of deploying into public subnets, the module
 looks up the private subnets of each environment's VPC and uses those. Every cluster now runs in private subnets by
 default.
 
-## Node pools and scaling
+### Node pools and scaling
 
 Once the investigation showed the migration was feasible, we moved the workloads to dynamic scaling. A few notes
 from the migration:
@@ -71,19 +74,24 @@ from the migration:
   patterns. That leaves room to grow, but one misbehaving deployment cannot scale up a large number of expensive
   instances.
 - **Use Spot for workloads that are not critical.** We created Spot nodes for these workloads and assigned their
-  pods to them. Critical workloads stay on On-Demand.
+  pods to them. They tolerate interruptions fine. Critical workloads stay on On-Demand.
 - **Set disruption budgets on your `NodePool`.** We configured them so that nodes only rotate outside of spike
   hours, during the US night. This keeps node rotation away from peak traffic.
 - **Check your pod disruption budgets.** Consolidation will happily evict pods to pack things more efficiently,
   so make sure your PDBs reflect what you can really tolerate.
 
-## How we kept it safe
+## Migrating with blue/green
 
 We never modified the existing clusters. Instead, we built new EKS clusters alongside them and moved over using a
-blue/green approach. This also let us start on the latest Kubernetes version available at the time.
+blue/green approach. This also let us upgrade Kubernetes from 1.27 to 1.29 along the way.
 
 While the new clusters were being built, we used a separate migration DNS name to test everything on them
-temporarily, without touching live traffic. Once we were happy with the results, we did the cutover.
+temporarily, without touching live traffic. Once we were happy with the results, we did the cutover. Each migration took two days
+at most, so the old and new clusters only ran side by side for a short time.
+
+Rolling back was easy: we could simply go back to the old cluster. Our databases live outside the cluster. The ELK
+stack did run inside it, but our backups are automated, so restoring them into a new StatefulSet on the new cluster
+was simple.
 
 ![Blue/green migration from the old EKS clusters to new EKS Auto Mode clusters](./images/blue-green.svg)
 
