@@ -16,7 +16,7 @@
     <text x="555" y="146" font-size="13" fill="#d1fae5">EKS Auto Mode + Karpenter</text>
     <text x="555" y="170" font-size="13" fill="#d1fae5">ALBs + AWS WAF</text>
     <line x1="305" y1="125" x2="413" y2="125" stroke="#22c58b" stroke-width="3" marker-end="url(#a)"/>
-    <text x="360" y="112" font-size="12" fill="#3fe3a6">traffic</text>
-    <text x="360" y="232" font-size="13" fill="#94a3b8">Old clusters kept running until the move was done. Zero service disruption.</text>
+    <text x="360" y="112" font-size="12" fill="#3fe3a6">cutover</text>
+    <text x="360" y="232" font-size="13" fill="#94a3b8">Tested on a migration DNS name first, then cut over. Zero service disruption.</text>
   </g>
 </svg>
