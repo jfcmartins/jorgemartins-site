@@ -5,7 +5,7 @@ on:
     branches: [main]
     paths-ignore:
       - 'infra/**'
-      - '**.md'
+      - 'README.md'
   workflow_dispatch: {}
 
 permissions:
